@@ -280,15 +280,6 @@
             "name": "疾風剣"
         },
         {
-            "imageName": "angel-knife",
-            "category": "weapons",
-            "atk": 9,
-            "ability": "blockMiracle",
-            "price": 15,
-            "giftRate": 1,
-            "name": "エンゼルナイフ"
-        },
-        {
             "imageName": "sky-harpoon",
             "category": "weapons",
             "atk": 9,
@@ -326,7 +317,7 @@
             "name": "ソードシールド"
         },
         {
-            "imageName": "reflecting-sword",
+            "imageName": "reflection-sword",
             "category": "weapons",
             "atk": 10,
             "ability": "reflectWeapon",
@@ -360,6 +351,15 @@
             "price": 15,
             "giftRate": 1,
             "name": "六角凶"
+        },
+        {
+            "imageName": "angel-knife",
+            "category": "weapons",
+            "atk": 11,
+            "ability": "blockMiracle",
+            "price": 15,
+            "giftRate": 1,
+            "name": "エンゼルナイフ"
         },
         {
             "imageName": "horror-wheel",
@@ -1129,7 +1129,7 @@
             "name": "アイアンガントレット"
         },
         {
-            "imageName": "ogres-shoes",
+            "imageName": "ogre-s-shoes",
             "category": "armor",
             "atk": 5,
             "isPlusAtk": true,
@@ -1236,7 +1236,7 @@
             "name": "アイアンアーマー"
         },
         {
-            "imageName": "ogres-gauntlet",
+            "imageName": "ogre-s-gauntlet",
             "category": "armor",
             "atk": 10,
             "isPlusAtk": true,
@@ -1308,13 +1308,13 @@
             "name": "精霊の足袋"
         },
         {
-            "imageName": "flame-armor",
+            "imageName": "flame-mail",
             "category": "armor",
             "element": "fire",
             "def": 6,
             "price": 10,
             "giftRate": 1,
-            "name": "フレイムアーマー"
+            "name": "フレイムメイル"
         },
         {
             "imageName": "ice-armor",
@@ -1361,7 +1361,7 @@
             "name": "はがねのかぶと"
         },
         {
-            "imageName": "ogres-helm",
+            "imageName": "ogre-s-helm",
             "category": "armor",
             "atk": 10,
             "isPlusAtk": true,
@@ -1467,7 +1467,7 @@
             "name": "はがねのよろい"
         },
         {
-            "imageName": "ogres-armor",
+            "imageName": "ogre-s-armor",
             "category": "armor",
             "atk": 15,
             "isPlusAtk": true,
@@ -1737,7 +1737,7 @@
             "abilityValue": 5,
             "price": 1,
             "giftRate": 12,
-            "name": "即時回復Ⅰ"
+            "name": "スマイルのしずく"
         },
         {
             "imageName": "heart-dew",
@@ -1746,7 +1746,7 @@
             "abilityValue": 10,
             "price": 3,
             "giftRate": 8,
-            "name": "即時回復Ⅱ"
+            "name": "ハートのしずく"
         },
         {
             "imageName": "romance-water",
@@ -1755,7 +1755,7 @@
             "abilityValue": 15,
             "price": 5,
             "giftRate": 4,
-            "name": "アーモンドウォーター"
+            "name": "ロマンスウォーター"
         },
         {
             "imageName": "galaxy-geyser",
@@ -1764,7 +1764,7 @@
             "abilityValue": 20,
             "price": 20,
             "giftRate": 1,
-            "name": "しろうとはだまっとれ牛乳"
+            "name": "天の川のおいしい水"
         },
         {
             "imageName": "smile-flower",
@@ -1809,7 +1809,7 @@
             "ability": "removeMildCurses",
             "price": 5,
             "giftRate": 12,
-            "name": "ハッピーセット"
+            "name": "スマイルの貝がら"
         },
         {
             "imageName": "heart-shell",
@@ -1817,10 +1817,10 @@
             "ability": "removeAllCurses",
             "price": 15,
             "giftRate": 6,
-            "name": "牛乳"
+            "name": "ハートの貝がら"
         },
         {
-            "imageName": "guardian-sealed-jar",
+            "imageName": "guardian-pot",
             "category": "sundries",
             "ability": "setGuardian",
             "price": 10,
@@ -1875,7 +1875,7 @@
             "ability": "callPhenomenon",
             "price": 3,
             "giftRate": 1,
-            "name": "パルプンテ"
+            "name": "運命のひも"
         },
         {
             "imageName": "sun-amulet",
@@ -1884,7 +1884,7 @@
             "abilityValue": 10,
             "price": 10,
             "giftRate": 1,
-            "name": "不死のトーテム"
+            "name": "太陽のお守り"
         },
         {
             "imageName": "dangerous-mortar",
@@ -2800,29 +2800,29 @@
         },
         "modeNames": {
             "training": "修行",
-            "hidden": "隠れ乱闘",
+            "private": "隠れ乱闘",
             "duel": "真剣タイマン"
         },
         "modeDescriptions": {
             "training": "コンピュータと対戦",
-            "hidden": "友達と対戦",
+            "private": "友達と対戦",
             "duel": "2人個人戦"
         },
         "home": {
-            "design": "設計",
-            "designCredit": "グウジ",
-            "art": "美術",
-            "artCredit": "あみ",
             "userName": "預言者の名前",
             "setUserName": "生誕する",
-            "userNameEmpty": "預言者の名前を<br>入力してください",
             "underMaintenance": "サーバメンテナンス中です",
             "versionInvalid": "アプリの更新が<br>必要です",
             "update": "更新する"
         },
-        "about": {
-            "about": "サービス情報",
+        "settings": {
+            "settings": "設定",
+            "language": "言語",
             "version": "バージョン {{version}}",
+            "design": "設計",
+            "designCredit": "グウジ",
+            "art": "美術",
+            "artCredit": "あみ",
             "soundMaterials": "効果音素材",
             "soundMaterialsCredit": "ザ・マッチメイカァズ",
             "ptTranslation": "ポルトガル語翻訳",
@@ -2838,7 +2838,9 @@
             "ruTranslation": "ロシア語翻訳",
             "ruTranslationCredit": "Master Cid",
             "privacyPolicy": "プライバシーポリシー",
-            "licenses": "ライセンス"
+            "licenses": "ライセンス",
+            "deleteAccount": "アカウントを削除する",
+            "delete": "削除する"
         },
         "menu": {
             "userCount": "預言者 {{count}} 人",
@@ -2850,35 +2852,26 @@
             "players": "修行者",
             "countOption": "{{count}}人"
         },
-        "matchmaking": {
-            "addUser": "戦う",
-            "removeUser": "取り消す",
-            "matchmaking": "索敵中"
-        },
-        "record": {
-            "ranking": "ランキング",
-            "rating": "レーティング",
-            "gameCount": "{{count}} 試合"
-        },
-        "room": {
-            "showChat": "お告げを表示する",
-            "deny": "部屋から追い出す",
+        "private": {
+            "roomLocked": "新規入室不可",
+            "kick": "部屋から追い出す",
             "chat": "お告げ",
-            "chatToRoom": "部屋にお告げ",
+            "chatToAll": "全体にお告げ",
             "chatToTeam": "チームにお告げ",
             "chatLog": "お告げの記録",
             "userCount": "預言者 {{count}} 人",
-            "users": "預言者",
-            "full": "満員",
-            "giveUp": "戦いをあきらめる"
-        },
-        "entry": {
             "solo": "個人戦",
             "teams": "チーム戦",
             "shuffleTeams": "チームをシャッフル",
-            "tiebreaker": "終末の時",
-            "tiebreakerOff": "なし",
-            "addGame": "戦いを始める"
+            "tiebreak": "終末の時",
+            "tiebreakNone": "なし",
+            "startGame": "戦いを始める"
+        },
+        "duel": {
+            "start": "戦う",
+            "ranking": "ランキング",
+            "rating": "レーティング",
+            "gameCount": "{{count}} 試合"
         },
         "game": {
             "usedMiracles": "起こした奇跡",
@@ -2899,14 +2892,16 @@
             "bounce": "弾く",
             "reflect": "はね返す",
             "block": "止める",
+            "cutCost": "消費なし",
             "doBuy": "買う",
             "doNotBuy": "買わない",
             "opening": "預言者たちの戦いが<br>今始まる！",
-            "tiebreaker": "- 終末の時 -",
-            "tiebreakerBody": "悪魔がやって来る",
+            "tiebreak": "- 終末の時 -",
+            "tiebreakBody": "悪魔がやって来る",
+            "abandon": "戦いをあきらめる",
             "endingWin": "勝利",
-            "endingDraw": "そしてだれも いなくなった",
-            "removeGame": "戦いを終わる"
+            "endingDraw": "みんな いなくなった",
+            "resetGame": "戦いを終わる"
         },
         "abilities": {
             "discard": "神器を捨てる<br>(新しい神器は授からない)",

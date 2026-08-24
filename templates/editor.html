@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="ja" class="h-full bg-slate-950 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ゴッドフィールド スキン＆テキストエディタ</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Cropper.js CSS & JS CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+  <!-- FontAwesome Icons CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            gf: {
+              main: '#55bb99',
+              dark: '#008f6f',
+              light: '#eeffee',
+              accent: '#dd6699',
+              blue: '#1177bb'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #090d16; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #334155; }
+    .cropper-view-box, .cropper-face { border-radius: 0; }
+  </style>
+</head>
+<body class="h-full flex flex-col overflow-hidden select-none bg-slate-950 text-slate-100">
+
+  <!-- Header -->
+  <header class="bg-slate-900 border-b border-slate-800 px-6 py-3 flex items-center justify-between shadow-md z-20 flex-shrink-0">
+    <div class="flex items-center space-x-3">
+      <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-gf-main to-gf-dark flex items-center justify-center shadow-md">
+        <i class="fa-solid fa-wand-magic-sparkles text-white text-lg"></i>
+      </div>
+      <div>
+        <h1 class="text-base font-bold tracking-wide text-white flex items-center gap-2">
+          ゴッドフィールド <span class="text-xs bg-gf-dark text-white px-2 py-0.5 rounded-full font-normal">自作スキンエディタ</span>
+        </h1>
+        <p class="text-[11px] text-slate-400">左で項目を選択 ➔ 右でリアルタイム編集＆画像クリッピング</p>
+      </div>
+    </div>
+
+    <!-- Header Actions -->
+    <div class="flex items-center space-x-3">
+      <div class="flex items-center bg-slate-800/80 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-300 gap-2">
+        <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span><span id="itemCountBadge">0 件</span></span>
+        <span class="text-slate-600">|</span>
+        <span class="text-amber-400 font-medium" id="customCountBadge">変更: 0 件</span>
+      </div>
+
+      <a href="/" target="_blank" class="flex items-center gap-2 bg-gradient-to-r from-gf-dark to-gf-main hover:brightness-110 text-white text-xs font-semibold px-4 py-2 rounded-lg shadow-md transition-all transform active:scale-95">
+        <i class="fa-solid fa-gamepad"></i>
+        <span>ゲームを起動</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- 2-Column Split Workspace -->
+  <div class="flex-1 flex overflow-hidden">
+
+    <!-- LEFT COLUMN: Navigation & Item List (Width: 380px ~ 420px) -->
+    <aside class="w-96 lg:w-[420px] flex-shrink-0 flex flex-col border-r border-slate-800 bg-slate-900/90 z-10">
+      
+      <!-- Category Tabs (Horizontal scrolling) -->
+      <div class="p-3 border-b border-slate-800 bg-slate-900 flex-shrink-0">
+        <div class="flex items-center space-x-1 overflow-x-auto pb-1">
+          <button data-cat="all" class="cat-tab active px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap transition-all bg-gf-dark text-white shadow-sm flex items-center gap-1">
+            <i class="fa-solid fa-layer-group text-[10px]"></i><span>すべて</span>
+          </button>
+          <button data-cat="weapons" class="cat-tab px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap transition-all text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-1">
+            <i class="fa-solid fa-hand-fist text-[10px]"></i><span>武器</span>
+          </button>
+          <button data-cat="armor" class="cat-tab px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap transition-all text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-1">
+            <i class="fa-solid fa-shield-halved text-[10px]"></i><span>防具</span>
+          </button>
+          <button data-cat="sundries" class="cat-tab px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap transition-all text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-1">
+            <i class="fa-solid fa-box-open text-[10px]"></i><span>雑貨</span>
+          </button>
+          <button data-cat="miracles" class="cat-tab px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap transition-all text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-1">
+            <i class="fa-solid fa-wand-sparkles text-[10px]"></i><span>奇跡</span>
+          </button>
+          <button data-cat="devils" class="cat-tab px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap transition-all text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-1">
+            <i class="fa-solid fa-skull text-[10px]"></i><span>悪魔</span>
+          </button>
+          <button data-cat="guardians" class="cat-tab px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap transition-all text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-1">
+            <i class="fa-solid fa-feather-pointed text-[10px]"></i><span>守護神</span>
+          </button>
+          <button data-cat="phenomena" class="cat-tab px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap transition-all text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-1">
+            <i class="fa-solid fa-tornado text-[10px]"></i><span>超常</span>
+          </button>
+          <button data-cat="trade" class="cat-tab px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap transition-all text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-1">
+            <i class="fa-solid fa-arrows-rotate text-[10px]"></i><span>取引</span>
+          </button>
+          <button data-cat="other_images" class="cat-tab px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap transition-all text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-1">
+            <i class="fa-regular fa-image text-[10px]"></i><span>画面/UI</span>
+          </button>
+          <button data-cat="ui_texts" class="cat-tab px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap transition-all text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-1">
+            <i class="fa-solid fa-font text-[10px]"></i><span>テキスト</span>
+          </button>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="relative mt-2">
+          <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-500 text-xs"></i>
+          <input type="text" id="searchInput" placeholder="アイテム名・元名・IDで検索..." 
+            class="w-full pl-8 pr-7 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-xs focus:outline-none focus:border-gf-main focus:ring-1 focus:ring-gf-main transition-all text-slate-200 placeholder-slate-500">
+          <button id="clearSearchBtn" class="hidden absolute right-2.5 top-2 text-slate-400 hover:text-white text-xs">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Item List Container -->
+      <div id="itemList" class="flex-1 overflow-y-auto p-2 space-y-1">
+        <!-- Dynamic list items -->
+      </div>
+
+      <!-- Empty State for List -->
+      <div id="emptyListState" class="hidden flex-1 flex-col items-center justify-center p-6 text-slate-500 text-center">
+        <i class="fa-solid fa-magnifying-glass text-3xl mb-2 text-slate-600"></i>
+        <p class="text-xs font-medium">該当する項目がありません</p>
+      </div>
+
+    </aside>
+
+
+    <!-- RIGHT COLUMN: Detail & Cropper Editor Workspace (Flex-1) -->
+    <main class="flex-1 flex flex-col bg-slate-950 overflow-y-auto relative">
+
+      <!-- Default State (when nothing selected) -->
+      <div id="noSelectionState" class="flex-1 flex flex-col items-center justify-center p-8 text-slate-500">
+        <div class="w-16 h-16 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-600 text-2xl mb-4">
+          <i class="fa-regular fa-hand-pointer"></i>
+        </div>
+        <h2 class="text-sm font-bold text-slate-400">アイテムを選択してください</h2>
+        <p class="text-xs text-slate-600 mt-1">左側のリストから編集したいアイテムや画像をクリックすると、詳細編集とクリッピングが行えます。</p>
+      </div>
+
+      <!-- Active Item Editor Panel -->
+      <div id="editorPanel" class="hidden flex-1 p-6 max-w-5xl mx-auto w-full flex flex-col gap-6">
+
+        <!-- Top Overview Card: Name, Meta, Badges, Image Comparison -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-lg flex flex-col md:flex-row gap-6 justify-between items-start md:items-center">
+          
+          <!-- Name & Category & Statuses -->
+          <div class="flex-1 space-y-3 w-full">
+            <div class="flex items-center gap-2">
+              <span id="detailCategoryBadge" class="text-xs font-semibold text-gf-main bg-gf-dark/20 border border-gf-dark/40 px-2.5 py-0.5 rounded">
+                武器
+              </span>
+              <span id="detailImageName" class="text-xs font-mono text-slate-500">bronze-club</span>
+              <span id="detailResolutionMeta" class="text-xs font-mono text-slate-400 bg-slate-800 px-2 py-0.5 rounded">80 × 80 px</span>
+            </div>
+
+            <!-- Item Name Edit -->
+            <div class="space-y-1" id="nameEditContainer">
+              <div class="flex items-center justify-between">
+                <label class="text-xs font-medium text-slate-400">アイテム名（日本語）</label>
+                <span id="detailDefaultName" class="text-xs text-slate-500">元: 銅のこん棒</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <input type="text" id="detailNameInput" 
+                  class="flex-1 bg-slate-950 border border-slate-700 focus:border-gf-main focus:ring-1 focus:ring-gf-main text-white px-3 py-1.5 rounded-lg text-sm transition-colors font-medium">
+                <button id="btnResetDetailName" title="元の名前に戻す" 
+                  class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-rose-400 border border-slate-700 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5">
+                  <i class="fa-solid fa-arrow-rotate-left"></i><span>元に戻す</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Status Badges (Server read-only) -->
+            <div id="detailBadgesContainer" class="flex flex-wrap gap-1.5">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+
+          <!-- Comparison Thumbnails Preview -->
+          <div class="flex items-center gap-4 bg-slate-950/80 border border-slate-800 rounded-xl p-3 flex-shrink-0 self-center md:self-auto">
+            <!-- Original Image -->
+            <div class="flex flex-col items-center gap-1">
+              <span class="text-[10px] text-slate-400">変更元 (デフォルト)</span>
+              <div class="w-16 h-16 bg-slate-900 rounded-lg border border-slate-800 flex items-center justify-center p-1">
+                <img id="detailDefaultImg" src="" alt="Default" class="max-w-full max-h-full object-contain pointer-events-none">
+              </div>
+            </div>
+
+            <div class="text-slate-600 text-sm"><i class="fa-solid fa-arrow-right"></i></div>
+
+            <!-- Current Custom Image -->
+            <div class="flex flex-col items-center gap-1">
+              <span id="detailCustomLabel" class="text-[10px] text-slate-400">変更先 (ゲーム画像)</span>
+              <div id="detailCustomImgBox" class="w-16 h-16 bg-slate-900 rounded-lg border border-slate-800 flex items-center justify-center p-1 overflow-hidden">
+                <img id="detailCustomImg" src="" alt="Custom" class="max-w-full max-h-full object-contain pointer-events-none">
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+
+        <!-- Image Cropper & Upload Section -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-5">
+          
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-crop-simple text-gf-main"></i>
+              <span>画像クリッピング＆トリミング</span>
+            </h3>
+            <button id="btnResetDetailImage" class="text-xs text-rose-400 hover:text-rose-300 hover:underline flex items-center gap-1.5">
+              <i class="fa-solid fa-arrow-rotate-left"></i><span>初期のデフォルト画像に戻す</span>
+            </button>
+          </div>
+
+          <!-- Upload Dropzone -->
+          <div id="dropZone" class="border-2 border-dashed border-slate-700 hover:border-gf-main rounded-xl p-5 text-center cursor-pointer transition-colors bg-slate-950/40 relative group">
+            <input type="file" id="fileInput" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
+            <i class="fa-solid fa-cloud-arrow-up text-2xl text-slate-500 group-hover:text-gf-main transition-colors mb-1"></i>
+            <p class="text-xs text-slate-300 font-medium">新しい画像を選択、またはここにドラッグ＆ドロップ</p>
+            <p class="text-[10px] text-slate-500 mt-0.5">PNG, JPG, WEBP 対応（高解像度画像もそのままアップロード＆保持されます）</p>
+          </div>
+
+          <!-- Cropper Workspace -->
+          <div id="cropperWorkspace" class="hidden flex flex-col gap-4">
+            
+            <!-- Canvas viewport -->
+            <div class="relative bg-slate-950 rounded-xl overflow-hidden border border-slate-800 h-80 flex items-center justify-center">
+              <img id="cropperImage" src="" alt="Crop Area" class="max-h-full max-w-full">
+            </div>
+
+            <!-- Cropper Tool Buttons -->
+            <div class="flex flex-wrap items-center justify-between gap-3 bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+              <div class="flex items-center space-x-1">
+                <button id="cropZoomIn" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded text-xs transition-colors" title="拡大"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
+                <button id="cropZoomOut" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded text-xs transition-colors" title="縮小"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
+                <button id="cropRotateLeft" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded text-xs transition-colors" title="左90度回転"><i class="fa-solid fa-rotate-left"></i></button>
+                <button id="cropRotateRight" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded text-xs transition-colors" title="右90度回転"><i class="fa-solid fa-rotate-right"></i></button>
+                <button id="cropFlipX" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded text-xs transition-colors" title="左右反転"><i class="fa-solid fa-arrows-left-right"></i></button>
+                <button id="cropReset" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded text-xs transition-colors" title="枠リセット"><i class="fa-solid fa-arrows-rotate"></i></button>
+              </div>
+
+              <div class="flex items-center gap-3 text-xs text-slate-400">
+                <span>選択範囲: <span id="cropDimensions" class="text-gf-main font-mono font-bold">0 × 0</span> px</span>
+              </div>
+            </div>
+
+            <!-- Two Specification Checkboxes -->
+            <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-3">
+              <div class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                <i class="fa-solid fa-sliders text-gf-main"></i> 出力＆クリッピング設定
+              </div>
+
+              <!-- Checkbox 1 -->
+              <label class="flex items-start gap-3 cursor-pointer group">
+                <input type="checkbox" id="checkResizeToDefault" checked 
+                  class="mt-0.5 w-4 h-4 rounded border-slate-700 text-gf-main focus:ring-gf-main focus:ring-offset-slate-950 bg-slate-900 cursor-pointer">
+                <div>
+                  <span class="text-xs font-semibold text-slate-200 group-hover:text-white">
+                    元画像の解像度（<span id="defaultResLabel">80 × 80</span> px）にリサイズして保存する
+                  </span>
+                  <p class="text-[11px] text-slate-500">ONの場合、切り抜いた画像を指定解像度にリサイズします。OFFの場合は切り抜いたサイズのまま保存されます。</p>
+                </div>
+              </label>
+
+              <!-- Checkbox 2 -->
+              <label class="flex items-start gap-3 cursor-pointer group">
+                <input type="checkbox" id="checkLockAspectRatio" checked 
+                  class="mt-0.5 w-4 h-4 rounded border-slate-700 text-gf-main focus:ring-gf-main focus:ring-offset-slate-950 bg-slate-900 cursor-pointer">
+                <div>
+                  <span class="text-xs font-semibold text-slate-200 group-hover:text-white">
+                    クリッピング選択の比率を元画像（<span id="defaultAspectLabel">1:1</span>）に限定する
+                  </span>
+                  <p class="text-[11px] text-slate-500">ONの場合、元画像の縦横比を保った枠で選択します。OFFの場合は自由な形状・比率で選択可能です（※リサイズON時は歪む場合があります）。</p>
+                </div>
+              </label>
+            </div>
+
+            <!-- Save Action Button -->
+            <div class="flex justify-end pt-2">
+              <button id="applyCropBtn" class="px-6 py-2.5 bg-gradient-to-r from-gf-dark to-gf-main hover:brightness-110 text-white rounded-xl text-xs font-bold shadow-lg transition-all transform active:scale-95 flex items-center gap-2">
+                <i class="fa-solid fa-check"></i>
+                <span>切り抜いてゲームに保存・適用</span>
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- UI Texts Section View (shown when ui_texts tab is active) -->
+      <div id="uiTextsPanel" class="hidden flex-1 p-6 max-w-4xl mx-auto w-full space-y-6">
+        <!-- Rendered dynamically -->
+      </div>
+
+    </main>
+
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-6 right-6 bg-slate-800 border border-slate-700 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 transition-all transform translate-y-20 opacity-0 pointer-events-none z-50">
+    <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
+    <div>
+      <p id="toastTitle" class="text-xs font-bold">保存完了</p>
+      <p id="toastMsg" class="text-[11px] text-slate-300">設定が更新されました</p>
+    </div>
+  </div>
+
+  <!-- Application Script -->
+  <script>
+    let appData = { items: [], other_images: [], current_texts: {}, default_texts: {}, config: {} };
+    let currentCategory = 'all';
+    let searchQuery = '';
+    let selectedItemId = null;
+    let currentEditingTarget = null;
+    let cropper = null;
+    let uploadedRawData = null;
+
+    const CATEGORY_NAMES = {
+      all: 'すべて',
+      weapons: '武器',
+      armor: '防具',
+      sundries: '雑貨',
+      miracles: '奇跡',
+      devils: '悪魔',
+      guardians: '守護神',
+      phenomena: '超常現象',
+      trade: '取引',
+      other_images: '画面・UI画像',
+      ui_texts: 'UIテキスト'
+    };
+
+    // Load initial data
+    async function loadData(preserveSelection = true) {
+      try {
+        const prevSelectedId = selectedItemId;
+        const res = await fetch('/api/data');
+        if (!res.ok) throw new Error('データ取得に失敗しました');
+        appData = await res.json();
+        updateBadges();
+        renderLeftList();
+
+        if (preserveSelection && prevSelectedId) {
+          selectItem(prevSelectedId);
+        } else if (!selectedItemId && appData.items.length > 0 && currentCategory !== 'ui_texts') {
+          // Select first item by default
+          selectItem(appData.items[0].id);
+        }
+      } catch (err) {
+        showToast('エラー', err.message, 'error');
+      }
+    }
+
+    function updateBadges() {
+      const totalItems = appData.items.length;
+      let customCount = 0;
+      const customItems = appData.config.items || {};
+      customCount += Object.keys(customItems).length;
+
+      appData.items.forEach(it => {
+        if (it.currentName !== it.defaultName) customCount++;
+      });
+
+      document.getElementById('itemCountBadge').textContent = `${totalItems} アイテム`;
+      document.getElementById('customCountBadge').textContent = `変更: ${customCount} 箇所`;
+    }
+
+    function showToast(title, msg, type = 'success') {
+      const toast = document.getElementById('toast');
+      const icon = document.getElementById('toastIcon');
+      document.getElementById('toastTitle').textContent = title;
+      document.getElementById('toastMsg').textContent = msg;
+
+      if (type === 'success') {
+        icon.className = 'fa-solid fa-circle-check text-emerald-400 text-lg';
+      } else if (type === 'error') {
+        icon.className = 'fa-solid fa-circle-exclamation text-rose-400 text-lg';
+      } else {
+        icon.className = 'fa-solid fa-circle-info text-sky-400 text-lg';
+      }
+
+      toast.classList.remove('translate-y-20', 'opacity-0', 'pointer-events-none');
+      setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
+      }, 2500);
+    }
+
+    // Render Left Column List
+    function renderLeftList() {
+      const listEl = document.getElementById('itemList');
+      const emptyState = document.getElementById('emptyListState');
+      const timestamp = Date.now();
+
+      if (currentCategory === 'ui_texts') {
+        listEl.classList.add('hidden');
+        emptyState.classList.add('hidden');
+        renderUiTextsPanel();
+        return;
+      }
+
+      listEl.classList.remove('hidden');
+      document.getElementById('uiTextsPanel').classList.add('hidden');
+
+      let list = [];
+      if (currentCategory === 'other_images') {
+        list = (appData.other_images || []).filter(img => {
+          if (searchQuery) {
+            const q = searchQuery.toLowerCase();
+            const matchPath = img.imagePath && img.imagePath.toLowerCase().includes(q);
+            const matchName = img.filename && img.filename.toLowerCase().includes(q);
+            if (!matchPath && !matchName) return false;
+          }
+          return true;
+        });
+      } else {
+        list = appData.items.filter(it => {
+          if (currentCategory !== 'all' && it.category !== currentCategory) return false;
+          if (searchQuery) {
+            const q = searchQuery.toLowerCase();
+            const matchName = it.currentName && it.currentName.toLowerCase().includes(q);
+            const matchDefName = it.defaultName && it.defaultName.toLowerCase().includes(q);
+            const matchImg = it.imageName && it.imageName.toLowerCase().includes(q);
+            const matchCat = it.category && it.category.toLowerCase().includes(q);
+            if (!matchName && !matchDefName && !matchImg && !matchCat) return false;
+          }
+          return true;
+        });
+      }
+
+      if (list.length === 0) {
+        listEl.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        emptyState.classList.add('flex');
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+      emptyState.classList.remove('flex');
+
+      listEl.innerHTML = list.map(item => {
+        const isSelected = item.id === selectedItemId;
+        const isCustomImg = item.custom && item.custom.raw_filename;
+        const isCustomText = item.currentName && item.currentName !== item.defaultName;
+        const isModified = isCustomImg || isCustomText;
+        const currentImgSrc = `/${item.imagePath}?t=${timestamp}`;
+        const displayName = item.currentName || item.filename || item.id;
+        const subName = item.defaultName ? `元: ${item.defaultName}` : item.imagePath;
+
+        return `
+          <div onclick=\"selectItem('${item.id}')\" 
+            class=\"cursor-pointer p-2.5 rounded-xl transition-all flex items-center justify-between gap-3 ${
+              isSelected 
+                ? 'bg-gf-dark/30 border border-gf-dark text-white shadow' 
+                : 'bg-slate-950/40 hover:bg-slate-800/60 border border-slate-800/80 text-slate-300'
+            }\">
+            
+            <div class=\"flex items-center gap-2.5 min-w-0\">
+              <!-- Image Thumbnail -->
+              <div class=\"w-10 h-10 rounded-lg bg-slate-950 border ${isCustomImg ? 'border-amber-500/80 ring-1 ring-amber-500/40' : 'border-slate-800'} flex items-center justify-center p-0.5 flex-shrink-0 overflow-hidden\">
+                <img src=\"${currentImgSrc}\" alt=\"Thumb\" class=\"max-w-full max-h-full object-contain pointer-events-none\">
+              </div>
+
+              <!-- Name & Category -->
+              <div class=\"min-w-0 flex-1\">
+                <div class=\"flex items-center gap-1.5\">
+                  <p class=\"text-xs font-bold truncate ${isSelected ? 'text-gf-main' : 'text-slate-200'}\">${escapeHtml(displayName)}</p>
+                  ${isModified ? '<span class=\"w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0\" title=\"カスタマイズ済み\"></span>' : ''}
+                </div>
+                <p class=\"text-[10px] text-slate-500 truncate\">${escapeHtml(subName)}</p>
+              </div>
+            </div>
+
+            <!-- Category / Status Tag -->
+            <span class=\"text-[10px] text-slate-400 bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800 flex-shrink-0 font-medium\">
+              ${CATEGORY_NAMES[item.category] || item.category}
+            </span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Select Item and populate Right Column
+    function selectItem(itemId) {
+      selectedItemId = itemId;
+      renderLeftList();
+
+      let target = appData.items.find(i => i.id === itemId);
+      let targetType = 'item';
+      if (!target) {
+        target = (appData.other_images || []).find(i => i.id === itemId);
+        targetType = 'other_image';
+      }
+
+      if (!target) {
+        document.getElementById('noSelectionState').classList.remove('hidden');
+        document.getElementById('editorPanel').classList.add('hidden');
+        return;
+      }
+
+      document.getElementById('noSelectionState').classList.add('hidden');
+      document.getElementById('editorPanel').classList.remove('hidden');
+      currentEditingTarget = { ...target, targetType };
+
+      populateDetailPanel(currentEditingTarget);
+    }
+
+    function populateDetailPanel(target) {
+      const timestamp = Date.now();
+      const isItem = target.targetType === 'item';
+
+      // Category & Meta
+      document.getElementById('detailCategoryBadge').textContent = CATEGORY_NAMES[target.category] || target.category;
+      document.getElementById('detailImageName').textContent = target.imageName || target.filename;
+
+      const dw = target.defaultWidth || 80;
+      const dh = target.defaultHeight || 80;
+      document.getElementById('detailResolutionMeta').textContent = `${dw} × ${dh} px`;
+      document.getElementById('defaultResLabel').textContent = `${dw} × ${dh}`;
+      document.getElementById('defaultAspectLabel').textContent = `${dw}:${dh}`;
+
+      // Name inputs
+      const nameContainer = document.getElementById('nameEditContainer');
+      const nameInput = document.getElementById('detailNameInput');
+      const defaultNameEl = document.getElementById('detailDefaultName');
+      const btnResetName = document.getElementById('btnResetDetailName');
+
+      if (isItem) {
+        nameContainer.classList.remove('hidden');
+        nameInput.value = target.currentName || '';
+        defaultNameEl.textContent = `元: ${target.defaultName}`;
+        const isCustomName = target.currentName !== target.defaultName;
+        btnResetName.disabled = !isCustomName;
+        btnResetName.className = isCustomName 
+          ? 'px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-rose-400 border border-slate-700 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer' 
+          : 'px-3 py-1.5 bg-slate-900 text-slate-600 border border-slate-800 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 opacity-40 cursor-not-allowed';
+      } else {
+        nameContainer.classList.add('hidden');
+      }
+
+      // Status Badges
+      const badgesContainer = document.getElementById('detailBadgesContainer');
+      let badgesHtml = '';
+      if (target.atk !== undefined && target.atk !== null) {
+        badgesHtml += `<span class=\"inline-flex items-center px-2.5 py-0.5 rounded text-xs font-bold bg-rose-950/80 text-rose-400 border border-rose-800/60\" title=\"攻撃力 (※サーバー処理のため変更不可)\">攻 ${target.atk}${target.isPlusAtk ? '+' : ''}</span>`;
+      }
+      if (target.def !== undefined && target.def !== null) {
+        badgesHtml += `<span class=\"inline-flex items-center px-2.5 py-0.5 rounded text-xs font-bold bg-sky-950/80 text-sky-400 border border-sky-800/60\" title=\"防御力 (※サーバー処理のため変更不可)\">防 ${target.def}</span>`;
+      }
+      if (target.price !== undefined && target.price !== null) {
+        badgesHtml += `<span class=\"inline-flex items-center px-2.5 py-0.5 rounded text-xs font-bold bg-amber-950/80 text-amber-300 border border-amber-800/60\" title=\"価格 (※サーバー処理のため変更不可)\">¥${target.price}</span>`;
+      }
+      if (target.giftRate !== undefined && target.giftRate !== null) {
+        badgesHtml += `<span class=\"inline-flex items-center px-2.5 py-0.5 rounded text-xs font-bold bg-emerald-950/80 text-emerald-400 border border-emerald-800/60\" title=\"授かり率 (※サーバー処理のため変更不可)\">${target.giftRate}%</span>`;
+      }
+      if (target.hp !== undefined && target.hp !== null) {
+        badgesHtml += `<span class=\"inline-flex items-center px-2.5 py-0.5 rounded text-xs font-bold bg-green-950/80 text-green-400 border border-green-800/60\">HP ${target.hp}</span>`;
+      }
+      if (target.mp !== undefined && target.mp !== null) {
+        badgesHtml += `<span class=\"inline-flex items-center px-2.5 py-0.5 rounded text-xs font-bold bg-blue-950/80 text-blue-400 border border-blue-800/60\">MP ${target.mp}</span>`;
+      }
+      if (target.ability) {
+        badgesHtml += `<span class=\"inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-slate-800 text-slate-300 border border-slate-700\">能力: ${target.ability}</span>`;
+      }
+      badgesContainer.innerHTML = badgesHtml;
+
+      // Image Comparison
+      const isCustomImg = target.custom && target.custom.raw_filename;
+      document.getElementById('detailDefaultImg').src = `/custom_data/defaults/${target.imagePath}?t=${timestamp}`;
+      document.getElementById('detailCustomImg').src = `/${target.imagePath}?t=${timestamp}`;
+      document.getElementById('detailCustomLabel').textContent = isCustomImg ? '変更先 (カスタム適用中)' : '変更先 (デフォルト)';
+      document.getElementById('detailCustomLabel').className = isCustomImg ? 'text-[10px] text-amber-400 font-bold' : 'text-[10px] text-slate-400';
+      document.getElementById('detailCustomImgBox').className = `w-16 h-16 bg-slate-900 rounded-lg border ${isCustomImg ? 'border-amber-500/80 ring-1 ring-amber-500/40' : 'border-slate-800'} flex items-center justify-center p-1 overflow-hidden`;
+
+      // Reset Image button
+      const btnResetImg = document.getElementById('btnResetDetailImage');
+      btnResetImg.disabled = !isCustomImg;
+      btnResetImg.className = isCustomImg 
+        ? 'text-xs text-rose-400 hover:text-rose-300 hover:underline flex items-center gap-1.5 cursor-pointer' 
+        : 'text-xs text-slate-600 flex items-center gap-1.5 opacity-40 cursor-not-allowed';
+
+      // Checkboxes configuration
+      const prevCustom = target.custom || {};
+      document.getElementById('checkResizeToDefault').checked = prevCustom.resize_to_default !== undefined ? prevCustom.resize_to_default : true;
+      document.getElementById('checkLockAspectRatio').checked = prevCustom.lock_aspect_ratio !== undefined ? prevCustom.lock_aspect_ratio : true;
+
+      // Cropper state
+      const cropperWorkspace = document.getElementById('cropperWorkspace');
+      if (prevCustom.raw_filename) {
+        initCropperWithUrl(`/custom_data/uploads/${prevCustom.raw_filename}`, prevCustom.raw_filename, prevCustom.crop_box);
+      } else {
+        if (cropper) { cropper.destroy(); cropper = null; }
+        cropperWorkspace.classList.add('hidden');
+      }
+    }
+
+    // Name change listener
+    document.getElementById('detailNameInput').addEventListener('change', async (e) => {
+      if (!currentEditingTarget || currentEditingTarget.targetType !== 'item') return;
+      const val = e.target.value.trim();
+      await updateItemText(currentEditingTarget.index, val);
+    });
+    document.getElementById('detailNameInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') e.target.blur();
+    });
+
+    document.getElementById('btnResetDetailName').addEventListener('click', async () => {
+      if (!currentEditingTarget || currentEditingTarget.targetType !== 'item') return;
+      await resetItemText(currentEditingTarget.index);
+    });
+
+    document.getElementById('btnResetDetailImage').addEventListener('click', async () => {
+      if (!currentEditingTarget) return;
+      if (currentEditingTarget.targetType === 'item') {
+        await resetItemImage(currentEditingTarget.id, currentEditingTarget.imagePath);
+      } else {
+        await resetOtherImage(currentEditingTarget.id, currentEditingTarget.imagePath);
+      }
+      selectItem(currentEditingTarget.id);
+    });
+
+    // Cropper & Upload Handlers
+    function initCropperWithUrl(imageUrl, rawFilename, prevCropBox = null) {
+      uploadedRawData = { filename: rawFilename, url: imageUrl };
+      const cropperImage = document.getElementById('cropperImage');
+      const cropperWorkspace = document.getElementById('cropperWorkspace');
+
+      cropperWorkspace.classList.remove('hidden');
+      if (cropper) { cropper.destroy(); cropper = null; }
+
+      cropperImage.src = imageUrl;
+      cropperImage.onload = () => {
+        const dw = currentEditingTarget.defaultWidth || 80;
+        const dh = currentEditingTarget.defaultHeight || 80;
+        const lockAspect = document.getElementById('checkLockAspectRatio').checked;
+
+        cropper = new Cropper(cropperImage, {
+          aspectRatio: lockAspect ? (dw / dh) : NaN,
+          viewMode: 1,
+          autoCropArea: 0.9,
+          responsive: true,
+          crop(event) {
+            const data = event.detail;
+            document.getElementById('cropDimensions').textContent = `${Math.round(data.width)} × ${Math.round(data.height)}`;
+          },
+          ready() {
+            if (prevCropBox) {
+              cropper.setData(prevCropBox);
+            }
+          }
+        });
+      };
+    }
+
+    document.getElementById('checkLockAspectRatio').addEventListener('change', (e) => {
+      if (!cropper || !currentEditingTarget) return;
+      const dw = currentEditingTarget.defaultWidth || 80;
+      const dh = currentEditingTarget.defaultHeight || 80;
+      cropper.setAspectRatio(e.target.checked ? (dw / dh) : NaN);
+    });
+
+    const fileInput = document.getElementById('fileInput');
+    fileInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      await uploadAndSetupCropper(file);
+    });
+
+    async function uploadAndSetupCropper(file) {
+      if (!currentEditingTarget) return;
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const base64Data = e.target.result;
+        const ext = file.name.split('.').pop() || 'png';
+
+        try {
+          const res = await fetch('/api/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              target_id: currentEditingTarget.id,
+              image_base64: base64Data,
+              ext: ext
+            })
+          });
+          if (!res.ok) throw new Error('画像アップロードに失敗しました');
+          const data = await res.json();
+          initCropperWithUrl(data.upload_url, data.filename);
+          showToast('画像読込完了', 'クロップ範囲を調整して適用ボタンを押してください');
+        } catch (err) {
+          showToast('エラー', err.message, 'error');
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+
+    document.getElementById('applyCropBtn').addEventListener('click', async () => {
+      if (!cropper || !currentEditingTarget || !uploadedRawData) return;
+
+      const cropData = cropper.getData(true);
+      const resizeToDefault = document.getElementById('checkResizeToDefault').checked;
+      const lockAspectRatio = document.getElementById('checkLockAspectRatio').checked;
+
+      const payload = {
+        target_id: currentEditingTarget.id,
+        target_type: currentEditingTarget.targetType,
+        image_path: currentEditingTarget.imagePath,
+        raw_filename: uploadedRawData.filename,
+        crop_box: cropData,
+        resize_to_default: resizeToDefault,
+        lock_aspect_ratio: lockAspectRatio,
+        default_width: currentEditingTarget.defaultWidth || 80,
+        default_height: currentEditingTarget.defaultHeight || 80
+      };
+
+      try {
+        const res = await fetch('/api/crop', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error('クロップ保存に失敗しました');
+        
+        showToast('保存完了', '画像がゲームファイルに反映されました！');
+        await loadData(true);
+      } catch (err) {
+        showToast('エラー', err.message, 'error');
+      }
+    });
+
+    // Cropper toolbar actions
+    document.getElementById('cropZoomIn').addEventListener('click', () => cropper && cropper.zoom(0.1));
+    document.getElementById('cropZoomOut').addEventListener('click', () => cropper && cropper.zoom(-0.1));
+    document.getElementById('cropRotateLeft').addEventListener('click', () => cropper && cropper.rotate(-90));
+    document.getElementById('cropRotateRight').addEventListener('click', () => cropper && cropper.rotate(90));
+    document.getElementById('cropFlipX').addEventListener('click', () => {
+      if (!cropper) return;
+      cropper.scaleX(cropper.getData().scaleX === -1 ? 1 : -1);
+    });
+    document.getElementById('cropReset').addEventListener('click', () => cropper && cropper.reset());
+
+    // UI Texts Panel Render
+    function renderUiTextsPanel() {
+      const panel = document.getElementById('uiTextsPanel');
+      document.getElementById('editorPanel').classList.add('hidden');
+      document.getElementById('noSelectionState').classList.add('hidden');
+      panel.classList.remove('hidden');
+
+      const curTexts = appData.current_texts || {};
+      const defTexts = appData.default_texts || {};
+
+      let html = '<div class="space-y-6">';
+      for (const [sectionKey, sectionObj] of Object.entries(curTexts)) {
+        if (typeof sectionObj !== 'object' || sectionObj === null) continue;
+
+        let rows = '';
+        for (const [k, v] of Object.entries(sectionObj)) {
+          const defVal = (defTexts[sectionKey] && defTexts[sectionKey][k]) || v;
+          const isModified = v !== defVal;
+
+          rows += `
+            <div class=\"flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 bg-slate-900 border ${isModified ? 'border-gf-dark ring-1 ring-gf-dark/30' : 'border-slate-800'} rounded-xl\">
+              <div class=\"sm:w-1/3\">
+                <span class=\"text-xs font-mono text-slate-400\">${k}</span>
+                <p class=\"text-[11px] text-slate-500 truncate\">元: ${escapeHtml(defVal)}</p>
+              </div>
+              <div class=\"flex-1 flex items-center gap-2\">
+                <input type=\"text\" value=\"${escapeHtml(v)}\" 
+                  data-cat=\"${sectionKey}\" data-key=\"${k}\"
+                  class=\"ui-text-input flex-1 bg-slate-950 border border-slate-700 focus:border-gf-main text-white px-3 py-1.5 rounded-lg text-xs\">
+                <button onclick=\"resetUiText('${sectionKey}', '${k}')\" 
+                  title=\"初期テキストに戻す\"
+                  class=\"p-2 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-colors text-xs ${isModified ? 'opacity-100' : 'opacity-30 cursor-not-allowed'}\"
+                  ${isModified ? '' : 'disabled'}>
+                  <i class=\"fa-solid fa-arrow-rotate-left\"></i>
+                </button>
+              </div>
+            </div>
+          `;
+        }
+
+        html += `
+          <div class=\"bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-md\">
+            <h3 class=\"text-sm font-bold text-gf-main uppercase tracking-wider mb-3 flex items-center gap-2\">
+              <i class=\"fa-solid fa-quote-left text-xs\"></i> ${sectionKey}
+            </h3>
+            <div class=\"space-y-2\">
+              ${rows}
+            </div>
+          </div>
+        `;
+      }
+      html += '</div>';
+
+      panel.innerHTML = html;
+
+      document.querySelectorAll('.ui-text-input').forEach(input => {
+        input.addEventListener('change', async (e) => {
+          const cat = e.target.dataset.cat;
+          const key = e.target.dataset.key;
+          const val = e.target.value;
+          await updateUiText(cat, key, val);
+        });
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') e.target.blur();
+        });
+      });
+    }
+
+    // Backend text API calls
+    async function updateItemText(itemIndex, name) {
+      try {
+        const res = await fetch('/api/update_text', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ target_type: 'item_name', item_index: itemIndex, name: name })
+        });
+        if (!res.ok) throw new Error('テキスト更新に失敗しました');
+        appData.items[itemIndex].currentName = name;
+        showToast('保存完了', `名前を「${name}」に更新しました`);
+        updateBadges();
+        renderLeftList();
+        selectItem(selectedItemId);
+      } catch (err) {
+        showToast('エラー', err.message, 'error');
+      }
+    }
+
+    async function resetItemText(itemIndex) {
+      try {
+        const res = await fetch('/api/reset_text', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ target_type: 'item_name', item_index: itemIndex })
+        });
+        if (!res.ok) throw new Error('リセットに失敗しました');
+        appData.items[itemIndex].currentName = appData.items[itemIndex].defaultName;
+        showToast('リセット完了', '元の名前に戻しました');
+        updateBadges();
+        renderLeftList();
+        selectItem(selectedItemId);
+      } catch (err) {
+        showToast('エラー', err.message, 'error');
+      }
+    }
+
+    async function updateUiText(category, key, value) {
+      try {
+        const res = await fetch('/api/update_text', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ target_type: 'text_entry', category: category, key: key, value: value })
+        });
+        if (!res.ok) throw new Error('テキスト更新に失敗しました');
+        if (appData.current_texts[category]) {
+          appData.current_texts[category][key] = value;
+        }
+        showToast('保存完了', 'テキストを更新しました');
+        updateBadges();
+      } catch (err) {
+        showToast('エラー', err.message, 'error');
+      }
+    }
+
+    async function resetUiText(category, key) {
+      try {
+        const res = await fetch('/api/reset_text', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ target_type: 'text_entry', category: category, key: key })
+        });
+        if (!res.ok) throw new Error('リセットに失敗しました');
+        const defVal = (appData.default_texts[category] && appData.default_texts[category][key]) || '';
+        if (appData.current_texts[category]) {
+          appData.current_texts[category][key] = defVal;
+        }
+        showToast('リセット完了', '元のテキストに戻しました');
+        updateBadges();
+        renderUiTextsPanel();
+      } catch (err) {
+        showToast('エラー', err.message, 'error');
+      }
+    }
+
+    async function resetItemImage(itemId, imagePath) {
+      try {
+        const res = await fetch('/api/reset_image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ target_type: 'item', target_id: itemId, image_path: imagePath })
+        });
+        if (!res.ok) throw new Error('画像リセットに失敗しました');
+        const it = appData.items.find(i => i.id === itemId);
+        if (it) it.custom = {};
+        if (appData.config.items) delete appData.config.items[itemId];
+        showToast('リセット完了', '初期のデフォルト画像に戻しました');
+        await loadData(true);
+      } catch (err) {
+        showToast('エラー', err.message, 'error');
+      }
+    }
+
+    async function resetOtherImage(imgId, imagePath) {
+      try {
+        const res = await fetch('/api/reset_image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ target_type: 'other_image', target_id: imgId, image_path: imagePath })
+        });
+        if (!res.ok) throw new Error('画像リセットに失敗しました');
+        const img = (appData.other_images || []).find(i => i.id === imgId);
+        if (img) img.custom = {};
+        if (appData.config.other_images) delete appData.config.other_images[imgId];
+        showToast('リセット完了', '初期のデフォルト画像に戻しました');
+        await loadData(true);
+      } catch (err) {
+        showToast('エラー', err.message, 'error');
+      }
+    }
+
+    // Category Tabs
+    document.querySelectorAll('.cat-tab').forEach(tab => {
+      tab.addEventListener('click', (e) => {
+        document.querySelectorAll('.cat-tab').forEach(t => {
+          t.className = 'cat-tab px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap transition-all text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-1';
+        });
+        const targetBtn = e.currentTarget;
+        targetBtn.className = 'cat-tab active px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap transition-all bg-gf-dark text-white shadow-sm flex items-center gap-1';
+        currentCategory = targetBtn.dataset.cat;
+        selectedItemId = null;
+        renderLeftList();
+
+        // Auto-select first item if applicable
+        if (currentCategory !== 'ui_texts') {
+          const list = currentCategory === 'other_images' ? appData.other_images : appData.items.filter(it => currentCategory === 'all' || it.category === currentCategory);
+          if (list && list.length > 0) {
+            selectItem(list[0].id);
+          }
+        }
+      });
+    });
+
+    // Search Input
+    const searchInput = document.getElementById('searchInput');
+    const clearSearchBtn = document.getElementById('clearSearchBtn');
+    searchInput.addEventListener('input', (e) => {
+      searchQuery = e.target.value.trim();
+      if (searchQuery) {
+        clearSearchBtn.classList.remove('hidden');
+      } else {
+        clearSearchBtn.classList.add('hidden');
+      }
+      renderLeftList();
+    });
+    clearSearchBtn.addEventListener('click', () => {
+      searchInput.value = '';
+      searchQuery = '';
+      clearSearchBtn.classList.add('hidden');
+      renderLeftList();
+    });
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    window.addEventListener('DOMContentLoaded', () => loadData(false));
+  </script>
+</body>
+</html>

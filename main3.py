@@ -1,45 +1,90 @@
 import json
-import requests
-import concurrent.futures
 import os
+import urllib.parse
+import urllib.request
+import base64
+import concurrent.futures
 
-def download_file(url, save_path):
+def download_or_extract(entry, base_dir):
+    req = entry.get("request", {})
+    url = req.get("url", "")
+    if not url:
+        return
+    
+    parsed = urllib.parse.urlparse(url)
+    
+    # godfield.net 関連のパス抽出
+    if "godfield.net" in parsed.netloc:
+        path = parsed.path.lstrip("/")
+        if not path or path == "index.html":
+            return
+        save_path = os.path.join(base_dir, path)
+    elif "gstatic.com" in parsed.netloc:
+        path = parsed.path.lstrip("/")
+        save_path = os.path.join(base_dir, path)
+    elif "googletagmanager.com" in parsed.netloc:
+        path = "analytics.js"
+        save_path = os.path.join(base_dir, path)
+    else:
+        path = parsed.path.lstrip("/")
+        if not path:
+            return
+        save_path = os.path.join(base_dir, path)
+
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    
+    # まず HAR 内のレスポンスボディをチェック
+    resp = entry.get("response", {})
+    content = resp.get("content", {})
+    text = content.get("text")
+    encoding = content.get("encoding")
+    
+    if text is not None and len(text) > 0:
+        try:
+            if encoding == "base64":
+                raw_data = base64.b64decode(text)
+                with open(save_path, "wb") as f:
+                    f.write(raw_data)
+            else:
+                with open(save_path, "wb") as f:
+                    f.write(text.encode("utf-8"))
+            return
+        except Exception:
+            pass
+
+    # HAR内にデータがない場合はHTTPリクエストでダウンロード
     try:
-        response = requests.get(url)
-        if response.status_code == 200:
-            with open(save_path, "wb") as file:
-                file.write(response.content)
-            print(f"Saved: {save_path}")
-        else:
-            print(f"Failed to download: {url}")
+        req_obj = urllib.request.Request(
+            url, 
+            headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"}
+        )
+        with urllib.request.urlopen(req_obj, timeout=10) as response:
+            if response.status == 200:
+                with open(save_path, "wb") as f:
+                    f.write(response.read())
     except Exception as e:
-        print(f"Error downloading file: {str(e)}")
+        print(f"Error downloading {url}: {e}")
 
-def main(har_file_path):
-    with open(har_file_path, "r", encoding="utf-8") as har_file:
-        har_data = json.load(har_file)
+def main():
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    har_path = os.path.join(base_dir, "godfield.net.har")
     
-    entries = har_data.get("log", {}).get("entries", [])
-    
-    download_tasks = []
-    
-    for entry in entries:
-        request_url = entry.get("request", {}).get("url")
-        if request_url:
-            save_path = os.path.dirname(__file__) + "/" + "/".join(request_url.split("/")[3:len(request_url.split("/"))])  # ファイル名を取得
-            dir = "/".join(save_path.split("/")[0:-1]) + "/"  # 作りたいディレクトリ名
-            os.makedirs(dir, exist_ok=True)
-            download_tasks.append((request_url, save_path))
-    
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        # ファイルのダウンロードを並列実行
-        futures = [executor.submit(download_file, url, save_path) for url, save_path in download_tasks]
+    if not os.path.exists(har_path):
+        print(f"HAR file not found: {har_path}")
+        return
         
-        # 完了したタスクをチェックし、エラーを処理
+    with open(har_path, "r", encoding="utf-8") as f:
+        har_data = json.load(f)
+        
+    entries = har_data.get("log", {}).get("entries", [])
+    print(f"Total entries to process: {len(entries)}")
+    
+    with concurrent.futures.ThreadPoolExecutor(max_workers=15) as executor:
+        futures = [executor.submit(download_or_extract, entry, base_dir) for entry in entries]
         for future in concurrent.futures.as_completed(futures):
-            if future.exception() is not None:
-                print(f"Error in downloading: {future.exception()}")
+            if future.exception():
+                print(f"Task error: {future.exception()}")
+    print("Download and extraction completed!")
 
 if __name__ == "__main__":
-    har_file_path = "C:/Users/USER/Downloads/god2/god/godfield.net.har"  # Harファイルのパスを指定
-    main(har_file_path)
+    main()
